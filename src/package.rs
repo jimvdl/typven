@@ -1,12 +1,16 @@
-use serde::{Serialize, Deserialize};
+use std::path::PathBuf;
+
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct PackageSpec {
-    pub package: Package,
+pub struct PackageManifest {
+    pub package: PackageSpec,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct Package {
+#[serde(rename = "package")]
+pub struct PackageSpec {
     pub name: String,
     pub version: semver::Version,
+    pub entrypoint: PathBuf,
 }

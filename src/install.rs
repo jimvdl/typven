@@ -1,65 +1,144 @@
 use std::fs;
-use std::path::PathBuf;
-use std::str::FromStr;
 
-use anyhow::Context;
+use anyhow::{bail, Context};
 use fs_extra::dir::copy;
-use url::Url;
+use semver::Version;
 
-use crate::manifest::Manifest;
-use crate::package::PackageSpec;
+use crate::{manifest::Manifest, package::PackageManifest};
 
-pub fn package(raw_path: String) -> anyhow::Result<()> {
-    if let Ok(url) = Url::from_str(&raw_path) {
-        // TODO: clone from git and install
-    }
+pub fn package(name: String, version: Version) -> anyhow::Result<()> {
+    let manifest = Manifest::get_or_create()?;
 
-    let path = PathBuf::from(raw_path);
-    let pkg_manifest = path.join("typst.toml");
+    let root_dir = manifest
+        .get_package_path(&name)
+        .context("resolving package name into source path")?;
 
-    if !pkg_manifest.exists() {
-        anyhow::bail!(
-            "package does not have a valid typst.toml manifest, searched at {:?}",
-            pkg_manifest
+    let package_dir = root_dir.join(version.to_string());
+
+    if !package_dir.exists() {
+        bail!(
+            "{} version {} not found (searched at {:?})",
+            name,
+            version,
+            package_dir
         );
     }
 
-    let spec: PackageSpec = toml::from_str(&fs::read_to_string(&pkg_manifest)?)?;
+    let raw = fs::read_to_string(package_dir.join("typst.toml"))
+        .context(format!("fetch manifest from {}:{:?}", name, version))?;
+    let manifest: PackageManifest = toml::from_str(&raw).context("manifest corrupted")?;
 
-    // TODO: check if manifest is valid
+    if name != manifest.package.name {
+        bail!(
+            "package name ({}) does not match name in manifest ({})",
+            name,
+            manifest.package.name
+        );
+    }
+    if version != manifest.package.version {
+        bail!(
+            "package directory name ({}) does not match version in manifest ({})",
+            version,
+            manifest.package.version
+        );
+    }
+    let entrypoint = package_dir.join(&manifest.package.entrypoint);
+    if !entrypoint.exists() {
+        bail!(
+            "package entry point is missing, looked for {:?}",
+            manifest.package.entrypoint
+        );
+    }
 
-    // TODO: fetch from manifest instead
-    // remove the name of the folder from the path completely and get everything
-    // from the manifest. then place the folder with the newly formatted name
-    // {name}-{version} into /local/. you can also do validation when you have
-    // the package spec.
-    //
-    // pkg_manifest.pop();
-    // let pkg = pkg_manifest
-    //     .file_name()
-    //     .context("path terminated in ..")?
-    //     .to_string_lossy();
-    // let mut pkg = pkg.split("-");
-    // let name = pkg.next().unwrap();
-    // let version = pkg.next().unwrap();
+    let install_dir = dirs::data_dir()
+        .expect("failed to locate data directory")
+        .join(&format!(
+            "typst/packages/{}-{}",
+            manifest.package.name, manifest.package.version
+        ));
 
-    let subdir = format!(
-        "typst/packages/local/{}-{}",
-        spec.package.name, spec.package.version
-    );
+    fs::create_dir_all(&install_dir)
+        .context("creating typst package bundle directory in /local")?;
+    let mut options = fs_extra::dir::CopyOptions {
+        skip_exist: true,
+        content_only: true,
+        ..Default::default()
+    };
+    if install_dir.exists() {
+        options.overwrite = true;
+    }
+    copy(&package_dir, &install_dir, &options)?;
 
-    if let Some(data_dir) = dirs::data_dir() {
-        let dir = data_dir.join(&subdir);
+    Ok(())
+}
 
-        if dir.exists() {
-            fs::remove_dir_all(&dir)?;
+// when no version was specified install/update all package entries
+pub fn all_packages(name: String) -> anyhow::Result<()> {
+    let manifest = Manifest::get_or_create()?;
+
+    let root_dir = manifest
+        .get_package_path(&name)
+        .context("resolving package name into source path")?;
+
+    let available_versions: Vec<semver::Version> = fs::read_dir(&root_dir)?
+        .filter_map(Result::ok)
+        .map(|e| semver::Version::parse(&e.file_name().to_string_lossy()))
+        .filter_map(Result::ok)
+        .collect();
+
+    for version in available_versions {
+        let package_dir = root_dir.join(version.to_string());
+
+        if !package_dir.exists() {
+            eprintln!(
+                "{} version {} not found (searched at {:?})",
+                name, version, package_dir
+            );
+            continue;
         }
 
+        let raw = fs::read_to_string(package_dir.join("typst.toml"))
+            .context(format!("fetch manifest from {}:{:?}", name, version))?;
+        let manifest: PackageManifest = toml::from_str(&raw).context("manifest corrupted")?;
+
+        if name != manifest.package.name {
+            eprintln!(
+                "package name ({}) does not match name in manifest ({}:{})",
+                name, manifest.package.name, manifest.package.version
+            );
+            continue;
+        }
+        if version != manifest.package.version {
+            eprintln!(
+                "package directory name ({}) does not match version in manifest ({})",
+                version, manifest.package.version
+            );
+            continue;
+        }
+        let entrypoint = package_dir.join(&manifest.package.entrypoint);
+        if !entrypoint.exists() {
+            eprintln!(
+                "package entry point is missing, looked for {:?}",
+                manifest.package.entrypoint
+            );
+            continue;
+        }
+
+        let install_dir = dirs::data_dir()
+            .expect("failed to locate data directory")
+            .join(&format!(
+                "typst/packages/{}-{}",
+                manifest.package.name, manifest.package.version
+            ));
+
+        fs::create_dir_all(&install_dir)
+            .context("creating typst package bundle directory in /local")?;
         let options = fs_extra::dir::CopyOptions {
-            copy_inside: true,
+            skip_exist: true,
+            content_only: true,
             ..Default::default()
         };
-        copy(&path, dir, &options)?;
+        copy(&package_dir, &install_dir, &options)?;
     }
 
     Ok(())

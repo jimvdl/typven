@@ -1,53 +1,77 @@
 use std::{fs, path::PathBuf};
+
+use anyhow::{bail, Context};
 use toml_edit::{Document, Item, Table};
 
-use crate::package::Package;
-
-#[derive(Default)]
+#[derive(Debug)]
 pub struct Manifest {
     pub data: toml_edit::Document,
+    pub path: PathBuf,
 }
 
 impl Manifest {
-    pub fn new() -> anyhow::Result<Self> {
-        let path = PathBuf::from("typst/packages/manifest.toml");
+    pub fn get_or_create() -> anyhow::Result<Self> {
+        let data_dir = dirs::data_dir().expect("failed to locate data directory");
 
-        let dir = dirs::cache_dir().expect("cache_dir not found").join(&path);
-        if !dir.exists() {
-            let mut doc = Document::new();
-            doc.insert("packages", Item::Table(Table::new()));
+        let manifest_path = data_dir.join("typst/manifest.toml");
+        let data: anyhow::Result<Document> = fs::read_to_string(&manifest_path)
+            .and_then(|data| Ok(data.parse::<Document>().expect("")))
+            .or_else(|_| {
+                let mut doc = Document::new();
+                doc.insert("packages", Item::Table(Table::new()));
 
-            fs::write(dir, doc.to_string())?;
+                let data = doc.to_string();
+                fs::write(&manifest_path, data)?;
 
-            Ok(Self { data: doc })
-        } else {
-            let data = fs::read_to_string(dir)?;
+                Ok(doc)
+            });
 
-            Ok(Self {
-                data: data.parse::<Document>().expect("invalid manifest format"),
-            })
+        Ok(Self {
+            data: data.expect("unable to create or get manifest.toml"),
+            path: manifest_path,
+        })
+    }
+
+    pub fn register(&mut self, package_name: &str, path: &PathBuf) -> anyhow::Result<()> {
+        match self.data["packages"].as_table().unwrap().get(&package_name) {
+            Some(_) => println!("the \"{}\" package is already registered", &package_name),
+            None => {
+                self.data["packages"].as_table_mut().unwrap().insert(
+                    &package_name,
+                    toml_edit::value(path.to_str().context("path failed to_str conversion")?),
+                );
+
+                self.write()?;
+
+                return Ok(());
+            }
+        }
+
+        bail!("failed to register \"{}\"", package_name)
+    }
+
+    pub fn get_package_path(&self, package_name: &str) -> anyhow::Result<PathBuf> {
+        match self.data["packages"].as_table().unwrap().get(&package_name) {
+            Some(path) => Ok(PathBuf::from(path.as_str().unwrap())),
+            None => bail!(
+                "package \"{}\" is not a registered package, run tm register <path>",
+                package_name
+            ),
         }
     }
 
-    pub fn add(&mut self, package: &Package, path: &PathBuf) {
-        let pkg_index = format!("{}:{}", package.name, package.version);
-
-        if self.data["packages"].as_table().unwrap().contains_key(&pkg_index) {
-            // package already added
-            return;
-        }
-
+    pub fn unregister(&mut self, package_name: &str) -> anyhow::Result<()> {
         self.data["packages"]
             .as_table_mut()
             .unwrap()
-            .insert(&pkg_index, toml_edit::value(path.to_str().unwrap()));
+            .remove(&package_name);
 
-        let path = PathBuf::from("typst/packages/manifest.toml");
+        self.write()?;
 
-        if let Some(cache_dir) = dirs::cache_dir() {
-            let dir = cache_dir.join(&path);
+        Ok(())
+    }
 
-            fs::write(dir, self.data.to_string()).unwrap();
-        }
+    fn write(&self) -> std::io::Result<()> {
+        fs::write(&self.path, self.data.to_string())
     }
 }
