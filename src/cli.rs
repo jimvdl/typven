@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use clap::{Parser, Subcommand};
 
 #[derive(Parser, Debug)]
@@ -9,8 +11,15 @@ pub struct Cli {
 
 #[derive(Debug, Subcommand)]
 pub enum Commands {
-    #[command(visible_alias = "i", arg_required_else_help = true)]
+    Register {
+        path: PathBuf,
+    },
     Install {
-        raw_path: String,
+        name: String,
+        version: Option<semver::Version>,
+    },
+    Clean {
+        name: Option<String>,
+        version: Option<semver::Version>,
     },
 }
