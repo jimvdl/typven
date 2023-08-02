@@ -9,11 +9,10 @@ use crate::{manifest::Manifest, package::PackageManifest};
 pub fn package(name: String, version: Version) -> anyhow::Result<()> {
     let manifest = Manifest::get_or_create()?;
 
-    let root_dir = manifest
-        .get_package_path(&name)
-        .context("resolving package name into source path")?;
-
-    let package_dir = root_dir.join(version.to_string());
+    let package_dir = manifest
+        .package_path(&name)
+        .context("resolving package name into source path")?
+        .join(version.to_string());
 
     if !package_dir.exists() {
         bail!(
@@ -77,7 +76,7 @@ pub fn all_packages(name: String) -> anyhow::Result<()> {
     let manifest = Manifest::get_or_create()?;
 
     let root_dir = manifest
-        .get_package_path(&name)
+        .package_path(&name)
         .context("resolving package name into source path")?;
 
     let available_versions: Vec<semver::Version> = fs::read_dir(&root_dir)?

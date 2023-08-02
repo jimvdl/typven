@@ -6,7 +6,7 @@ mod package;
 
 use std::fs;
 
-use anyhow::Context;
+use anyhow::{bail, Context};
 use clap::Parser;
 
 use crate::{
@@ -26,6 +26,7 @@ fn main() -> anyhow::Result<()> {
     let mut manifest = Manifest::get_or_create()?;
 
     match cli.command {
+        Commands::Default { name } => manifest.default(name)?,
         Commands::Register { path } => {
             let package_name = &path
                 .file_name()
@@ -34,16 +35,26 @@ fn main() -> anyhow::Result<()> {
 
             manifest.register(&package_name, &path)?;
         }
-        Commands::Install { name, version } => {
-            if let Some(version) = version {
+        Commands::Install(entry) => {
+            let name = match entry.name {
+                Some(name) => name,
+                None => {
+                    match manifest.default_package() {
+                        Some(name) => name,
+                        None => bail!("argument <NAME> missing and no default specified. run command with the package name or run tm default <package_name>")
+                    }
+                }
+            };
+
+            if let Some(version) = entry.version {
                 install::package(name, version)?;
             } else {
                 install::all_packages(name)?;
             }
         }
-        Commands::Clean { name, version } => {
-            if let Some(name) = name {
-                clean::bundle(name, version)?;
+        Commands::Clean(entry) => {
+            if let Some(name) = entry.name {
+                clean::bundle(name, entry.version)?;
             } else {
                 clean::all()?;
             }

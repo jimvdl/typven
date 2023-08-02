@@ -11,15 +11,18 @@ pub struct Cli {
 
 #[derive(Debug, Subcommand)]
 pub enum Commands {
+    Default {
+        name: String,
+    },
     Register {
         path: PathBuf,
     },
-    Install {
-        name: String,
-        version: Option<semver::Version>,
-    },
-    Clean {
-        name: Option<String>,
-        version: Option<semver::Version>,
-    },
+    Install(PackageEntry),
+    Clean(PackageEntry),
+}
+
+#[derive(Debug, Parser)]
+pub struct PackageEntry {
+    pub name: Option<String>,
+    pub version: Option<semver::Version>,
 }
