@@ -94,6 +94,10 @@ pub fn all_packages(name: String) -> anyhow::Result<()> {
         .filter_map(Result::ok)
         .collect();
 
+    if available_versions.is_empty() {
+        bail!("package \"{}\" bundle directory contains no packages", name);
+    }
+
     for version in available_versions {
         let package_dir = root_dir.join(version.to_string());
 
