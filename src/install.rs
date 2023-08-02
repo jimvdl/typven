@@ -16,7 +16,7 @@ pub fn package(name: String, version: Version) -> anyhow::Result<()> {
 
     if !package_dir.exists() {
         bail!(
-            "{} version {} not found (searched at {:?})",
+            "\"{}\" version {} not found (searched at {:?})",
             name,
             version,
             package_dir
@@ -78,6 +78,15 @@ pub fn all_packages(name: String) -> anyhow::Result<()> {
     let root_dir = manifest
         .package_path(&name)
         .context("resolving package name into source path")?;
+
+    // TODO: improve error message
+    if !root_dir.exists() {
+        bail!(
+            "\"{}\" directory not found (searched at {:?})",
+            name,
+            root_dir
+        );
+    }
 
     let available_versions: Vec<semver::Version> = fs::read_dir(&root_dir)?
         .filter_map(Result::ok)
