@@ -69,8 +69,6 @@ impl Manifest {
                 return Ok(());
             }
         }
-
-        bail!("failed to register \"{}\"", package_name)
     }
 
     pub fn package_path(&self, package_name: &str) -> anyhow::Result<PathBuf> {
