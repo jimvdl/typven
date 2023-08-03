@@ -14,6 +14,7 @@ pub enum Commands {
     Default {
         name: String,
     },
+    Ls,
     Register {
         path: PathBuf,
     },

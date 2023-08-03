@@ -29,6 +29,7 @@ fn main() -> anyhow::Result<()> {
         Commands::Default { name } => manifest
             .default(name)
             .context("set default package failed")?,
+        Commands::Ls => package::ls().context("listing installed packages")?,
         Commands::Register { path } => {
             if !path.exists() {
                 bail!("no package found at {:?}", path);

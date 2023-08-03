@@ -88,17 +88,16 @@ pub fn all_packages(name: String) -> anyhow::Result<()> {
         );
     }
 
-    let available_versions: Vec<semver::Version> = fs::read_dir(&root_dir)?
+    let versions: Vec<semver::Version> = fs::read_dir(&root_dir)?
         .filter_map(Result::ok)
-        .map(|e| semver::Version::parse(&e.file_name().to_string_lossy()))
-        .filter_map(Result::ok)
+        .filter_map(|e| semver::Version::parse(&e.file_name().to_string_lossy()).ok())
         .collect();
 
-    if available_versions.is_empty() {
+    if versions.is_empty() {
         bail!("package \"{}\" bundle directory contains no packages", name);
     }
 
-    for version in available_versions {
+    for version in versions {
         let package_dir = root_dir.join(version.to_string());
 
         if !package_dir.exists() {
