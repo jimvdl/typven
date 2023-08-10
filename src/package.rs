@@ -1,8 +1,15 @@
 use std::{collections::HashMap, fs, path::PathBuf};
 
+use clap::Parser;
 use comfy_table::{modifiers::UTF8_ROUND_CORNERS, Table};
 use semver::Version;
 use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Parser)]
+pub struct Entry {
+    pub name: Option<String>,
+    pub version: Option<semver::Version>,
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PackageManifest {

@@ -29,12 +29,13 @@ fn main() -> anyhow::Result<()> {
         Commands::Default { name } => manifest
             .default(name)
             .context("set default package failed")?,
-        Commands::Ls => package::ls().context("listing installed packages")?,
-        Commands::Register { path } => {
+        Commands::Ls => package::ls().context("listing installed packages failed")?,
+        Commands::Add { path } => {
             if !path.exists() {
                 bail!("no package found at {:?}", path);
             }
 
+            // TODO: take name from any manifest, not folder name
             let package_name = &path
                 .file_name()
                 .context("failed to grab package bundle name from directory")?
@@ -48,13 +49,16 @@ fn main() -> anyhow::Result<()> {
             let name = match entry.name {
                 Some(name) => name,
                 None => match manifest.default_package() {
-                    Some(name) => name,
+                    Some(name) => {
+                        println!("installing default package: {}", name);
+                        name
+                    },
                     None => bail!("no default selected. run tm default <package_name>"),
                 },
             };
 
             if let Some(version) = entry.version {
-                install::package(name, version)?;
+                install::package(&name, version)?;
             } else {
                 install::all_packages(name)?;
             }

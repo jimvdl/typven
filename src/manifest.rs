@@ -57,7 +57,7 @@ impl Manifest {
 
     pub fn register(&mut self, package_name: &str, path: &PathBuf) -> anyhow::Result<()> {
         match self.data["packages"].as_table().unwrap().get(&package_name) {
-            Some(_) => bail!("the \"{}\" package is already registered", &package_name),
+            Some(_) => bail!("\"{}\" package is already registered", &package_name),
             None => {
                 self.data["packages"].as_table_mut().unwrap().insert(
                     &package_name,

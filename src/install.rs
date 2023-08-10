@@ -6,7 +6,7 @@ use semver::Version;
 
 use crate::{manifest::Manifest, package::PackageManifest};
 
-pub fn package(name: String, version: Version) -> anyhow::Result<()> {
+pub fn package(name: &String, version: Version) -> anyhow::Result<()> {
     let manifest = Manifest::get_or_create()?;
 
     let package_dir = manifest
@@ -27,7 +27,7 @@ pub fn package(name: String, version: Version) -> anyhow::Result<()> {
         .context(format!("fetch manifest from {}:{:?}", name, version))?;
     let manifest: PackageManifest = toml::from_str(&raw).context("manifest corrupted")?;
 
-    if name != manifest.package.name {
+    if name != &manifest.package.name {
         bail!(
             "package name ({}) does not match name in manifest ({})",
             name,
@@ -52,7 +52,7 @@ pub fn package(name: String, version: Version) -> anyhow::Result<()> {
     let install_dir = dirs::data_dir()
         .expect("failed to locate data directory")
         .join(&format!(
-            "typst/packages/{}-{}",
+            "typst/packages/local/{}/{}",
             manifest.package.name, manifest.package.version
         ));
 
@@ -95,61 +95,17 @@ pub fn all_packages(name: String) -> anyhow::Result<()> {
 
     if versions.is_empty() {
         bail!("package \"{}\" bundle directory contains no packages", name);
+
+        // probably shouldn't allow bad directory structures
+        // let raw = fs::read_to_string(root_dir.join("typst.toml"))
+        //     .context(format!("fetch manifest from {}", name))?;
+        // let manifest: PackageManifest = toml::from_str(&raw).context("manifest corrupted")?;
+
+        // return package(manifest.package.name, manifest.package.version);
     }
 
     for version in versions {
-        let package_dir = root_dir.join(version.to_string());
-
-        if !package_dir.exists() {
-            eprintln!(
-                "{} version {} not found (searched at {:?})",
-                name, version, package_dir
-            );
-            continue;
-        }
-
-        let raw = fs::read_to_string(package_dir.join("typst.toml"))
-            .context(format!("fetch manifest from {}:{:?}", name, version))?;
-        let manifest: PackageManifest = toml::from_str(&raw).context("manifest corrupted")?;
-
-        if name != manifest.package.name {
-            eprintln!(
-                "package name ({}) does not match name in manifest ({}:{})",
-                name, manifest.package.name, manifest.package.version
-            );
-            continue;
-        }
-        if version != manifest.package.version {
-            eprintln!(
-                "package directory name ({}) does not match version in manifest ({})",
-                version, manifest.package.version
-            );
-            continue;
-        }
-        let entrypoint = package_dir.join(&manifest.package.entrypoint);
-        if !entrypoint.exists() {
-            eprintln!(
-                "package entry point is missing, looked for {:?}",
-                manifest.package.entrypoint
-            );
-            continue;
-        }
-
-        let install_dir = dirs::data_dir()
-            .expect("failed to locate data directory")
-            .join(&format!(
-                "typst/packages/{}-{}",
-                manifest.package.name, manifest.package.version
-            ));
-
-        fs::create_dir_all(&install_dir)
-            .context("creating typst package bundle directory in /local")?;
-        let options = fs_extra::dir::CopyOptions {
-            skip_exist: true,
-            content_only: true,
-            ..Default::default()
-        };
-        copy(&package_dir, &install_dir, &options)?;
+        package(&name, version)?;
     }
 
     Ok(())

@@ -2,6 +2,8 @@ use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
 
+use crate::package;
+
 #[derive(Parser, Debug)]
 #[command(name = "template manager", version = env!("CARGO_PKG_VERSION"))]
 pub struct Cli {
@@ -15,15 +17,9 @@ pub enum Commands {
         name: String,
     },
     Ls,
-    Register {
+    Add {
         path: PathBuf,
     },
-    Install(PackageEntry),
-    Clean(PackageEntry),
-}
-
-#[derive(Debug, Parser)]
-pub struct PackageEntry {
-    pub name: Option<String>,
-    pub version: Option<semver::Version>,
+    Install(package::Entry),
+    Clean(package::Entry),
 }
