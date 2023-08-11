@@ -1,76 +1,51 @@
 mod clean;
 mod cli;
 mod install;
-mod manifest;
 mod package;
+mod util;
 
-use std::fs;
+use std::io::{self, IsTerminal, Write};
 
-use anyhow::{bail, Context};
 use clap::Parser;
-
-use crate::{
-    cli::{Cli, Commands},
-    manifest::Manifest,
+use codespan_reporting::term::{
+    self,
+    termcolor::{self, ColorChoice, WriteColor},
 };
+
+use crate::cli::{Cli, Commands};
 
 fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
 
-    let data_dir = dirs::data_dir().expect("failed to locate data directory");
-    let install_dir = data_dir.join("typst/packages");
+    let res = match cli.command {
+        Commands::Install => install::packages(),
+        Commands::Ls => util::ls(),
+        Commands::Clean { name, version } => clean::all(name, version),
+    };
 
-    fs::create_dir_all(&install_dir)
-        .context("creating typst package bundle directory in /local")?;
-
-    let mut manifest = Manifest::get_or_create()?;
-
-    match cli.command {
-        Commands::Default { name } => manifest
-            .default(name)
-            .context("set default package failed")?,
-        Commands::Ls => package::ls().context("listing installed packages failed")?,
-        Commands::Add { path } => {
-            if !path.exists() {
-                bail!("no package found at {:?}", path);
-            }
-
-            // TODO: take name from any manifest, not folder name
-            let package_name = &path
-                .file_name()
-                .context("failed to grab package bundle name from directory")?
-                .to_string_lossy();
-
-            manifest
-                .register(&package_name, &path)
-                .context("package registration failed")?;
-        }
-        Commands::Install(entry) => {
-            let name = match entry.name {
-                Some(name) => name,
-                None => match manifest.default_package() {
-                    Some(name) => {
-                        println!("installing default package: {}", name);
-                        name
-                    },
-                    None => bail!("no default selected. run tm default <package_name>"),
-                },
-            };
-
-            if let Some(version) = entry.version {
-                install::package(&name, version)?;
-            } else {
-                install::all_packages(name)?;
-            }
-        }
-        Commands::Clean(entry) => {
-            if let Some(name) = entry.name {
-                clean::bundle(name, entry.version)?;
-            } else {
-                clean::all()?;
-            }
-        }
+    if let Err(msg) = res {
+        print_error(msg.to_string())?;
     }
 
     Ok(())
+}
+
+fn print_error(msg: String) -> io::Result<()> {
+    let mut w = color_stream();
+    let styles = term::Styles::default();
+
+    w.set_color(&styles.header_error)?;
+    write!(w, "error")?;
+
+    w.reset()?;
+    writeln!(w, ": {msg}")
+}
+
+/// Get stderr with color support if desirable.
+fn color_stream() -> termcolor::StandardStream {
+    termcolor::StandardStream::stderr(if std::io::stderr().is_terminal() {
+        ColorChoice::Auto
+    } else {
+        ColorChoice::Never
+    })
 }

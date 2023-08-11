@@ -1,112 +1,61 @@
-use std::fs;
+use std::{env, fs};
 
 use anyhow::{bail, Context};
 use fs_extra::dir::copy;
-use semver::Version;
+use walkdir::WalkDir;
 
-use crate::{manifest::Manifest, package::PackageManifest};
+use crate::package::{is_package, Package};
 
-pub fn package(name: &String, version: Version) -> anyhow::Result<()> {
-    let manifest = Manifest::get_or_create()?;
+pub fn packages() -> anyhow::Result<()> {
+    let cwd = env::current_dir().context("accessing current working directory failed")?;
+    // let cwd = std::path::Path::new("C:\\Users\\Jim\\Desktop\\typst-templates\\0.1.0");
+    // let cwd = std::path::Path::new("C:\\Users\\Jim\\Desktop");
 
-    let package_dir = manifest
-        .package_path(&name)
-        .context("resolving package name into source path")?
-        .join(version.to_string());
-
-    if !package_dir.exists() {
-        bail!(
-            "\"{}\" version {} not found (searched at {:?})",
-            name,
-            version,
-            package_dir
-        );
+    if let Some(package) = is_package(&cwd) {
+        return install(package);
     }
 
-    let raw = fs::read_to_string(package_dir.join("typst.toml"))
-        .context(format!("fetch manifest from {}:{:?}", name, version))?;
-    let manifest: PackageManifest = toml::from_str(&raw).context("manifest corrupted")?;
+    let packages: Vec<Package> = WalkDir::new(cwd)
+        .min_depth(1)
+        .max_depth(2)
+        .into_iter()
+        .filter_map(Result::ok)
+        .filter_map(|e| e.path().is_dir().then(|| is_package(&e.path()))?)
+        .collect();
 
-    if name != &manifest.package.name {
-        bail!(
-            "package name ({}) does not match name in manifest ({})",
-            name,
-            manifest.package.name
-        );
-    }
-    if version != manifest.package.version {
-        bail!(
-            "package directory name ({}) does not match version in manifest ({})",
-            version,
-            manifest.package.version
-        );
-    }
-    let entrypoint = package_dir.join(&manifest.package.entrypoint);
-    if !entrypoint.exists() {
-        bail!(
-            "package entry point is missing, looked for {:?}",
-            manifest.package.entrypoint
-        );
+    if packages.is_empty() {
+        bail!("no valid packages found");
     }
 
-    let install_dir = dirs::data_dir()
-        .expect("failed to locate data directory")
-        .join(&format!(
-            "typst/packages/local/{}/{}",
-            manifest.package.name, manifest.package.version
-        ));
-
-    fs::create_dir_all(&install_dir)
-        .context("creating typst package bundle directory in /local")?;
-    let mut options = fs_extra::dir::CopyOptions {
-        skip_exist: true,
-        content_only: true,
-        ..Default::default()
-    };
-    if install_dir.exists() {
-        options.overwrite = true;
+    for package in packages {
+        install(package)?;
     }
-    copy(&package_dir, &install_dir, &options)?;
 
     Ok(())
 }
 
-// when no version was specified install/update all package entries
-pub fn all_packages(name: String) -> anyhow::Result<()> {
-    let manifest = Manifest::get_or_create()?;
+fn install(package: Package) -> anyhow::Result<()> {
+    let subdir = format!("typst/packages/local/{}/{}", package.name, package.version);
 
-    let root_dir = manifest
-        .package_path(&name)
-        .context("resolving package name into source path")?;
+    let dest = dirs::data_dir()
+        .expect("failed to locate /local")
+        .join(&subdir);
 
-    // TODO: improve error message
-    if !root_dir.exists() {
-        bail!(
-            "\"{}\" directory not found (searched at {:?})",
-            name,
-            root_dir
-        );
+    if dest.exists() {
+        println!("{}:{} already exists - skipping", package.name, package.version);
+        return Ok(());
     }
 
-    let versions: Vec<semver::Version> = fs::read_dir(&root_dir)?
-        .filter_map(Result::ok)
-        .filter_map(|e| semver::Version::parse(&e.file_name().to_string_lossy()).ok())
-        .collect();
+    fs::create_dir_all(&dest).context("failed to create typst package bundle /local")?;
 
-    if versions.is_empty() {
-        bail!("package \"{}\" bundle directory contains no packages", name);
+    let options = fs_extra::dir::CopyOptions {
+        skip_exist: true,
+        content_only: true,
+        ..Default::default()
+    };
 
-        // probably shouldn't allow bad directory structures
-        // let raw = fs::read_to_string(root_dir.join("typst.toml"))
-        //     .context(format!("fetch manifest from {}", name))?;
-        // let manifest: PackageManifest = toml::from_str(&raw).context("manifest corrupted")?;
-
-        // return package(manifest.package.name, manifest.package.version);
-    }
-
-    for version in versions {
-        package(&name, version)?;
-    }
+    copy(&package.path, &dest, &options)?;
+    println!("installed {}:{}", package.name, package.version);
 
     Ok(())
 }
