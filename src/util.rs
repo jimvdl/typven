@@ -1,3 +1,5 @@
+//! Several utility functions, such as `ls` and `clean`.
+
 use std::{collections::HashMap, fs};
 
 use anyhow::{bail, Context};
@@ -7,6 +9,13 @@ use walkdir::WalkDir;
 
 use crate::package;
 
+/// Lists the locally installed packages in table format.
+/// 
+/// If a package is not valid, i.e. does not contain a valid `typst.toml`, `ls` 
+/// will silently ignore that directory and will not be listed.
+/// 
+/// # Errors
+/// No packages are installed.
 pub fn ls() -> anyhow::Result<()> {
     let packages_dir = dirs::data_dir()
         .expect("failed to locate data directory")
@@ -43,6 +52,23 @@ pub fn ls() -> anyhow::Result<()> {
     Ok(())
 }
 
+/// Cleans the local package directory
+/// 
+/// There are a few possible ways a clean is executed (in order):
+/// 1. If a valid package `name` is present clean all versions of that package.
+/// 2. If a valid package `name` is present, as well as a valid package `version`,
+/// clean that target version of that package.
+/// 3. If there is no target package to clean, clean the /local directory of 
+/// every package leaving /local empty.
+/// 
+/// When cleaning the entire /local directory it will start searching for 
+/// packages to clean 1 level deep so invalid top level packages that the 
+/// compiler would not recognize are not cleaned.
+/// 
+/// # Errors
+/// A package with `name` and `version` does not exist.
+/// A package with `name` does not exist.
+/// The local package directory is empty.
 pub fn clean(name: Option<String>, version: Option<Version>) -> anyhow::Result<()> {
     let root_dir = dirs::data_dir()
         .expect("failed to locate data directory")
