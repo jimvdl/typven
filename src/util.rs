@@ -1,8 +1,9 @@
 use std::{collections::HashMap, fs};
 
-use anyhow::{Context, bail};
+use anyhow::{bail, Context};
 use comfy_table::{modifiers::UTF8_ROUND_CORNERS, Table};
 use semver::Version;
+use walkdir::WalkDir;
 
 use crate::package;
 
@@ -61,5 +62,20 @@ pub fn clean(name: Option<String>, version: Option<Version>) -> anyhow::Result<(
             .with_context(|| format!("failed to clean {name}, package bundle not found"));
     }
 
-    fs::remove_dir_all(&root_dir).context("nothing to clean")
+    let local_package_dirs: Vec<_> = WalkDir::new(&root_dir)
+        .min_depth(1)
+        .into_iter()
+        .filter_map(Result::ok)
+        .filter(|e| e.path().is_dir())
+        .collect();
+
+    if local_package_dirs.is_empty() {
+        bail!("nothing to clean");
+    }
+
+    for dir in local_package_dirs {
+        let _ = fs::remove_dir_all(&dir.path());
+    }
+
+    Ok(())
 }
