@@ -2,9 +2,8 @@ use std::{env, fs};
 
 use anyhow::{bail, Context};
 use fs_extra::dir::copy;
-use walkdir::WalkDir;
 
-use crate::package::{is_package, Package};
+use crate::package::{is_package, Package, self};
 
 pub fn packages() -> anyhow::Result<()> {
     let cwd = env::current_dir().context("accessing current working directory failed")?;
@@ -15,13 +14,7 @@ pub fn packages() -> anyhow::Result<()> {
         return install(package);
     }
 
-    let packages: Vec<Package> = WalkDir::new(cwd)
-        .min_depth(1)
-        .max_depth(2)
-        .into_iter()
-        .filter_map(Result::ok)
-        .filter_map(|e| e.path().is_dir().then(|| is_package(&e.path()))?)
-        .collect();
+    let packages = package::search(&cwd);
 
     if packages.is_empty() {
         bail!("no valid packages found");

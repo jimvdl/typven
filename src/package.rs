@@ -5,7 +5,9 @@ use std::{
 
 use semver::Version;
 use serde::{Deserialize, Serialize};
+use walkdir::WalkDir;
 
+#[derive(Debug)]
 pub struct Package {
     pub path: PathBuf,
     pub name: String,
@@ -36,4 +38,14 @@ pub fn is_package<P: AsRef<Path>>(path: &P) -> Option<Package> {
             name: m.package.name,
             version: m.package.version,
         })
+}
+
+pub fn search<P: AsRef<Path>>(path: &P) -> Vec<Package> {
+    WalkDir::new(&path)
+        .min_depth(1)
+        .max_depth(2)
+        .into_iter()
+        .filter_map(Result::ok)
+        .filter_map(|e| e.path().is_dir().then(|| is_package(&e.path()))?)
+        .collect()
 }

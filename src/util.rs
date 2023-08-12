@@ -1,20 +1,21 @@
 use std::{collections::HashMap, fs};
 
-use anyhow::Context;
+use anyhow::{Context, bail};
 use comfy_table::{modifiers::UTF8_ROUND_CORNERS, Table};
 use semver::Version;
 
-use crate::package::{is_package, Package};
+use crate::package;
 
 pub fn ls() -> anyhow::Result<()> {
     let packages_dir = dirs::data_dir()
         .expect("failed to locate data directory")
         .join("typst/packages/local");
 
-    let packages: Vec<Package> = fs::read_dir(&packages_dir)?
-        .filter_map(Result::ok)
-        .filter_map(|e| e.path().is_dir().then(|| is_package(&e.path()))?)
-        .collect();
+    let packages = package::search(&packages_dir);
+
+    if packages.is_empty() {
+        bail!("no valid packages found");
+    }
 
     let mut map: HashMap<String, String> = HashMap::new();
     for package in packages {
