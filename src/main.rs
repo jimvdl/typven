@@ -1,4 +1,3 @@
-mod clean;
 mod cli;
 mod install;
 mod package;
@@ -20,7 +19,7 @@ fn main() -> anyhow::Result<()> {
     let res = match cli.command {
         Commands::Install => install::packages(),
         Commands::Ls => util::ls(),
-        Commands::Clean { name, version } => clean::all(name, version),
+        Commands::Clean { name, version } => util::clean(name, version),
     };
 
     if let Err(msg) = res {
