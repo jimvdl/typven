@@ -1,6 +1,6 @@
 //! Package and package manifest, with helper functions
-//! 
-//! Packages always live in folders named as `{name}/{version}`. The name and 
+//!
+//! Packages always live in folders named as `{name}/{version}`. The name and
 //! version in the folder name and manifest must match.
 
 use std::{
@@ -20,7 +20,7 @@ pub struct Package {
     pub version: Version,
 }
 
-/// The `typst.toml` package manifest that is required to be considered a 
+/// The `typst.toml` package manifest that is required to be considered a
 /// "valid" package.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PackageManifest {
@@ -28,14 +28,14 @@ pub struct PackageManifest {
 }
 
 /// The `[package]` specification with only the required fields.
-/// 
+///
 /// The compiler requires every package to at least define:
 /// - `name`: The package's identifier in its namespace.
-/// - `version`: The package's version as a full major-minor-patch triple. 
+/// - `version`: The package's version as a full major-minor-patch triple.
 /// Package versioning should follow [SemVer].
-/// - `entrypoint`: The path to the main Typst file that is evaluated when the 
+/// - `entrypoint`: The path to the main Typst file that is evaluated when the
 /// package is imported.
-/// 
+///
 /// [SemVer]: https://semver.org/
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename = "package")]
@@ -46,11 +46,11 @@ pub struct PackageSpec {
 }
 
 /// Determines if the `path` directory contains a typst package.
-/// 
+///
 /// Only finds a package if:
 /// - `typst.toml` manifest is present in the root directory.
 /// - `typst.toml` contains the [required fields].
-/// 
+///
 /// [required fields]: PackageSpec
 pub fn is_package<P: AsRef<Path>>(path: &P) -> Option<Package> {
     let path = path.as_ref();
@@ -65,13 +65,13 @@ pub fn is_package<P: AsRef<Path>>(path: &P) -> Option<Package> {
         })
 }
 
-/// Searches the current `path` and every sub directory (2 levels deep) for 
+/// Searches the current `path` and every sub directory (2 levels deep) for
 /// valid packages. Internally uses [`is_package`] on each directory.
-/// 
+///
 /// This function cannot fail -- it will simply not include directories that
-/// fail to pass the [`is_package`] test and will only yield valid packages (if 
+/// fail to pass the [`is_package`] test and will only yield valid packages (if
 /// any).
-/// 
+///
 /// [`is_package`]: is_package
 pub fn search<P: AsRef<Path>>(path: &P) -> Vec<Package> {
     WalkDir::new(&path)

@@ -8,12 +8,13 @@ use semver::Version;
 #[command(name = "template manager", version = env!("CARGO_PKG_VERSION"))]
 pub struct Cli {
     #[command(subcommand)]
-    pub command: Commands,
+    pub command: Command,
 }
 
 /// The possible commands the CLI can execute.
 #[derive(Debug, Subcommand)]
-pub enum Commands {
+pub enum Command {
+    Auth,
     Install,
     Ls,
     Clean {

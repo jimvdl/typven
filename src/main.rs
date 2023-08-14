@@ -1,25 +1,26 @@
-//! `template manager` (or `tm`) allows for the local installation of [Typst] 
+//! `template manager` (or `tm`) allows for the local installation of [Typst]
 //! packages.
-//! 
+//!
 //! ### Installing
-//! 
-//! Once you have a [valid Typst package] go to its directory and simply run 
+//!
+//! Once you have a [valid Typst package] go to its directory and simply run
 //! `tm install`.
-//! 
+//!
 //! ### Listing
-//! 
+//!
 //! You can list installed packages by running `tm ls`.
-//! 
+//!
 //! ### Cleaning
-//! 
-//! If you want to remove a version of an installed package run 
+//!
+//! If you want to remove a version of an installed package run
 //! `tm clean <NAME> <VERSION>` and if you want to completly remove a bundle of
-//! versions for a target package run `tm clean <NAME>` and if you want to 
+//! versions for a target package run `tm clean <NAME>` and if you want to
 //! remove every package simply run `tm clean`.
-//! 
+//!
 //! [Typst]: https://typst.app/
 //! [valid Typst package]: https://github.com/typst/packages#package-format
 
+mod auth;
 mod cli;
 mod install;
 mod package;
@@ -33,27 +34,27 @@ use codespan_reporting::term::{
     termcolor::{self, ColorChoice, WriteColor},
 };
 
-use crate::cli::{Cli, Commands};
+use crate::cli::{Cli, Command};
 
 fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
 
     let res = match cli.command {
-        Commands::Install => install::packages(),
-        Commands::Ls => util::ls(),
-        Commands::Clean { name, version } => util::clean(name, version),
+        Command::Auth => auth::login(),
+        Command::Install => install::packages(),
+        Command::Ls => util::ls(),
+        Command::Clean { name, version } => util::clean(name, version),
     };
 
     if let Err(msg) = res {
-        print_error(msg.to_string())?;
+        print_error(&msg.to_string())?;
     }
 
     Ok(())
 }
 
-
 /// Print an application-level error.
-fn print_error(msg: String) -> io::Result<()> {
+fn print_error(msg: &str) -> io::Result<()> {
     let mut w = color_stream();
     let styles = term::Styles::default();
 
