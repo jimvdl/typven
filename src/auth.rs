@@ -38,6 +38,7 @@ enum AuthState {
     IncorrectDeviceCode,
 }
 
+// TODO: document when it is made available
 pub fn login() -> anyhow::Result<()> {
     let access_request = request_access()?;
 

@@ -11,9 +11,10 @@ use crate::{package, cli::CleanCommand};
 /// Lists the locally installed packages in table format.
 ///
 /// If a package is not valid, i.e. does not contain a valid `typst.toml`, `ls`
-/// will silently ignore that directory and will not be listed.
+/// will silently ignore that directory.
 ///
 /// # Errors
+/// 
 /// No packages are installed.
 pub fn ls() -> anyhow::Result<()> {
     let packages_dir = dirs::data_dir()
@@ -51,9 +52,9 @@ pub fn ls() -> anyhow::Result<()> {
     Ok(())
 }
 
-/// Cleans the local package directory
+/// Clean the local package directory
 ///
-/// There are a few possible ways a clean is executed (in order):
+/// There are a few possible ways a clean is performed (in order):
 /// 1. If a valid package `name` is present clean all versions of that package.
 /// 2. If a valid package `name` is present, as well as a valid package `version`,
 /// clean that target version of that package.
@@ -65,6 +66,7 @@ pub fn ls() -> anyhow::Result<()> {
 /// compiler would not recognize are not cleaned.
 ///
 /// # Errors
+/// 
 /// A package with `name` and `version` does not exist.
 /// A package with `name` does not exist.
 /// The local package directory is empty.

@@ -16,16 +16,17 @@ use crate::{
     package::{self, is_package, Package},
 };
 
-/// Installs the available packages in the local package directory.
+/// Installs package(s) into the local package directory.
 ///
 /// Attempts to install a single top-level package first and if there is none it
-/// tries to search for package from your current working directory 2 directory
-/// levels deep.
+/// tries to search for packages from your current working directory or from the
+/// given `path` two subdirectories deep.
 ///
 /// # Errors
+/// 
 /// Fails if there is no top-level package _and_ it could not find any other
-/// valid packages in or near  the current working directory. (searches 2
-/// directory levels deep)
+/// valid packages in or near the current working directory or the given `path`.
+/// (searches two subdirectories deep)
 pub fn packages(command: InstallCommand) -> anyhow::Result<()> {
     let cwd = command.path.unwrap_or_else(|| {
         env::current_dir().expect("accessing current working directory failed")
@@ -50,12 +51,12 @@ pub fn packages(command: InstallCommand) -> anyhow::Result<()> {
     Ok(())
 }
 
-/// Installs a single `Package` in the local package directory.
+/// Installs a single `Package` into the local package directory.
 ///
-/// When a package already exists and it is being installed again it will simply
-/// skip that package.
+/// When the package already exists it will skip the installation.
 ///
 /// # Errors
+/// 
 /// When access is denied while creating the local package directory structure
 /// or when there are insufficient permissions to copy the packge into /local.
 fn install(package: Package) -> anyhow::Result<()> {

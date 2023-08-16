@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use clap::{Parser, Subcommand};
 use semver::Version;
 
-/// The CLI parser.
+/// The typven CLI
 #[derive(Parser, Debug)]
 #[command(name = "typven", version = env!("CARGO_PKG_VERSION"))]
 pub struct Cli {
@@ -13,21 +13,21 @@ pub struct Cli {
     pub command: Command,
 }
 
-/// The possible commands the CLI can execute.
+/// The possible commands the CLI can execute
 #[derive(Debug, Subcommand)]
 pub enum Command {
-    /// Authenticate with GitHub for installing remote packages from private
+    /// Authenticates with GitHub for installing remote packages from private
     /// repositories
     Auth,
 
-    /// Install packages from the current working directory into the typst
-    /// package directory
+    /// Install package(s) from the current working directory or from a given
+    /// `path`
     Install(InstallCommand),
 
-    /// Lists locally installed packages in table format
+    /// List locally installed packages in table format
     Ls,
 
-    /// Cleans all intalled local packages, or clean a target package either by
+    /// Clean all intalled local packages, or clean a target package either by
     /// name or name and version
     Clean(CleanCommand),
 }
