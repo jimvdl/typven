@@ -2,7 +2,7 @@
 
 use std::path::PathBuf;
 
-use clap::{ArgAction, Parser, Subcommand};
+use clap::{Parser, Subcommand};
 use semver::Version;
 
 /// The CLI parser.
