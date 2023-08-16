@@ -35,7 +35,6 @@ pub enum Command {
 #[derive(Debug, Parser)]
 pub struct InstallCommand {
     /// Install package(s) from `path` instead of the current working directory
-    #[arg(value_name = "DIR", action = ArgAction::Append)]
     pub path: Option<PathBuf>,
 }
 
