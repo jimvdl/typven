@@ -11,10 +11,15 @@ sources and pre-built binaries for the latest release of typven.
 
 ## Usage
 
-Installs packages in the [local system directory](#package-directory):
+Installs packages in the [local system directory](#package-directory). It will
+either install a top-level package or recursively search the next two 
+subdirectories for packages and install each valid one.
 ```sh
 # Install package(s) from the current working directory
 typven install
+
+# Install package(s) from a given directory
+typven install A:/GitHub/my-packages
 ```
 
 Viewing the installed packages can be done by running `ls`, this will output 

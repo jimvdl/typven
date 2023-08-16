@@ -11,7 +11,10 @@ use std::{env, fs};
 use anyhow::{bail, Context};
 use fs_extra::dir::copy;
 
-use crate::package::{self, is_package, Package};
+use crate::{
+    cli::InstallCommand,
+    package::{self, is_package, Package},
+};
 
 /// Installs the available packages in the local package directory.
 ///
@@ -23,10 +26,12 @@ use crate::package::{self, is_package, Package};
 /// Fails if there is no top-level package _and_ it could not find any other
 /// valid packages in or near  the current working directory. (searches 2
 /// directory levels deep)
-pub fn packages() -> anyhow::Result<()> {
-    let cwd = env::current_dir().context("accessing current working directory failed")?;
-    // let cwd = std::path::Path::new("C:\\Users\\Jim\\Desktop\\typst-templates\\0.1.0");
-    // let cwd = std::path::Path::new("C:\\Users\\Jim\\Desktop");
+pub fn packages(command: InstallCommand) -> anyhow::Result<()> {
+    let cwd = command.path.unwrap_or_else(|| {
+        env::current_dir().expect("accessing current working directory failed")
+        // std::path::Path::new("C:\\Users\\Jim\\Desktop\\typst-templates\\0.1.0");
+        // std::path::Path::new("C:\\Users\\Jim\\Desktop");
+    });
 
     if let Some(package) = is_package(&cwd) {
         return install(package);

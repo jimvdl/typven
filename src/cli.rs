@@ -1,11 +1,13 @@
 //! The Command-Line Interface (CLI)
 
-use clap::{Parser, Subcommand};
+use std::path::PathBuf;
+
+use clap::{ArgAction, Parser, Subcommand};
 use semver::Version;
 
 /// The CLI parser.
 #[derive(Parser, Debug)]
-#[command(name = "template manager", version = env!("CARGO_PKG_VERSION"))]
+#[command(name = "typven", version = env!("CARGO_PKG_VERSION"))]
 pub struct Cli {
     #[command(subcommand)]
     pub command: Command,
@@ -20,7 +22,7 @@ pub enum Command {
 
     /// Install packages from the current working directory into the typst
     /// package directory
-    Install,
+    Install(InstallCommand),
 
     /// Lists locally installed packages in table format
     Ls,
@@ -28,6 +30,13 @@ pub enum Command {
     /// Cleans all intalled local packages, or clean a target package either by
     /// name or name and version
     Clean(CleanCommand),
+}
+
+#[derive(Debug, Parser)]
+pub struct InstallCommand {
+    /// Install package(s) from `path` instead of the current working directory
+    #[arg(value_name = "DIR", action = ArgAction::Append)]
+    pub path: Option<PathBuf>,
 }
 
 #[derive(Debug, Parser)]

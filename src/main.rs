@@ -41,7 +41,7 @@ fn main() -> anyhow::Result<()> {
 
     let res = match cli.command {
         Command::Auth => auth::login(),
-        Command::Install => install::packages(),
+        Command::Install(command) => install::packages(command),
         Command::Ls => util::ls(),
         Command::Clean(command) => util::clean(command),
     };
