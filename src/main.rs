@@ -43,7 +43,7 @@ fn main() -> anyhow::Result<()> {
         Command::Auth => auth::login(),
         Command::Install => install::packages(),
         Command::Ls => util::ls(),
-        Command::Clean { name, version } => util::clean(name, version),
+        Command::Clean(command) => util::clean(command),
     };
 
     if let Err(msg) = res {

@@ -27,8 +27,14 @@ pub enum Command {
 
     /// Cleans all intalled local packages, or clean a target package either by
     /// name or name and version
-    Clean {
-        name: Option<String>,
-        version: Option<Version>,
-    },
+    Clean(CleanCommand),
+}
+
+#[derive(Debug, Parser)]
+pub struct CleanCommand {
+    /// Package name to clean, will remove all versions for this package
+    pub name: Option<String>,
+
+    /// Cleans the target version of the given package
+    pub version: Option<Version>,
 }

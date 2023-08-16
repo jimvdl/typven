@@ -4,10 +4,9 @@ use std::{collections::HashMap, fs};
 
 use anyhow::{bail, Context};
 use comfy_table::{modifiers::UTF8_ROUND_CORNERS, Table};
-use semver::Version;
 use walkdir::WalkDir;
 
-use crate::package;
+use crate::{package, cli::CleanCommand};
 
 /// Lists the locally installed packages in table format.
 ///
@@ -69,13 +68,13 @@ pub fn ls() -> anyhow::Result<()> {
 /// A package with `name` and `version` does not exist.
 /// A package with `name` does not exist.
 /// The local package directory is empty.
-pub fn clean(name: Option<String>, version: Option<Version>) -> anyhow::Result<()> {
+pub fn clean(command: CleanCommand) -> anyhow::Result<()> {
     let root_dir = dirs::data_dir()
         .expect("failed to locate data directory")
         .join("typst/packages/local");
 
-    if let Some(name) = name {
-        if let Some(version) = version {
+    if let Some(name) = command.name {
+        if let Some(version) = command.version {
             let dir = root_dir.join(format!("{name}/{version}"));
 
             return fs::remove_dir_all(&dir)
