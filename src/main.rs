@@ -40,7 +40,7 @@ fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
 
     let res = match cli.command {
-        Command::Auth => auth::login(),
+        Command::Auth => Err(anyhow::anyhow!("auth is temporarily disabled")), // auth::login(),
         Command::Install(command) => install::packages(command),
         Command::Ls => util::ls(),
         Command::Clean(command) => util::clean(command),
