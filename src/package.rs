@@ -45,7 +45,7 @@ pub struct PackageSpec {
     pub entrypoint: PathBuf,
 }
 
-/// Determines if the `path` directory contains a typst package.
+/// Determines if the `path` directory contains a Typst package.
 ///
 /// Only finds a package if:
 /// - `typst.toml` manifest is present in the root directory.
@@ -65,7 +65,7 @@ pub fn is_package<P: AsRef<Path>>(path: &P) -> Option<Package> {
         })
 }
 
-/// Searches the current `path` and every sub directory (2 levels deep) for
+/// Searches the current `path` and every sub-directory (2 levels deep) for
 /// valid packages. Internally uses [`is_package`] on each directory.
 ///
 /// This function cannot fail -- it will simply not include directories that

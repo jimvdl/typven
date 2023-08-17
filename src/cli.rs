@@ -20,14 +20,13 @@ pub enum Command {
     /// repositories
     Auth,
 
-    /// Install package(s) from the current working directory or from a given
-    /// `path`
+    /// Install package(s) from the current working directory or a given `path`
     Install(InstallCommand),
 
     /// List locally installed packages in table format
     Ls,
 
-    /// Clean all intalled local packages, or clean a target package either by
+    /// Clean all installed local packages, or clean a target package either by
     /// name or name and version
     Clean(CleanCommand),
 }

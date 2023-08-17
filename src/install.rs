@@ -19,7 +19,7 @@ use crate::{
 /// Installs package(s) into the local package directory.
 ///
 /// Attempts to install a single top-level package first and if there is none it
-/// tries to search for packages from your current working directory or from the
+/// tries to search for packages from your current working directory or the  
 /// given `path` two subdirectories deep.
 ///
 /// # Errors

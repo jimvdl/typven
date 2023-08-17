@@ -62,7 +62,7 @@ pub fn ls() -> anyhow::Result<()> {
 /// every package leaving /local empty.
 ///
 /// When cleaning the entire /local directory it will start searching for
-/// packages to clean 1 level deep so invalid top level packages that the
+/// packages to clean 1 level deep so invalid top-level packages that the
 /// compiler would not recognize are not cleaned.
 ///
 /// # Errors
