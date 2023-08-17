@@ -56,7 +56,7 @@ jobs:
       run: |
         directory=typven-${{ matrix.target }}
         mkdir $directory
-        cp README.md LICENSE NOTICE $directory
+        cp README.md LICENSE-MIT LICENSE-APACHE $directory
         if [ -f target/${{ matrix.target }}/release/typven.exe ]; then
           cp target/${{ matrix.target }}/release/typven.exe $directory
           7z a -r $directory.zip $directory
