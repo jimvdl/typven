@@ -28,17 +28,17 @@ use crate::{
 /// valid packages in or near the current working directory or the given `path`.
 /// (searches two subdirectories deep)
 pub fn packages(command: InstallCommand) -> anyhow::Result<()> {
-    let cwd = command.path.unwrap_or_else(|| {
+    let path = command.path.unwrap_or_else(|| {
         env::current_dir().expect("accessing current working directory failed")
         // std::path::Path::new("C:\\Users\\Jim\\Desktop\\typst-templates\\0.1.0");
         // std::path::Path::new("C:\\Users\\Jim\\Desktop");
     });
 
-    if let Some(package) = is_package(&cwd) {
+    if let Some(package) = is_package(&path) {
         return install(package);
     }
 
-    let packages = package::search(&cwd);
+    let packages = package::search(&path);
 
     if packages.is_empty() {
         bail!("no valid packages found");
