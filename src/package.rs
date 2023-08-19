@@ -20,6 +20,12 @@ pub struct Package {
     pub version: Version,
 }
 
+impl std::fmt::Display for Package {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}:{}", self.name, self.version)
+    }
+}
+
 /// The `typst.toml` package manifest that is required to be considered a
 /// "valid" package.
 #[derive(Debug, Serialize, Deserialize)]

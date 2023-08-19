@@ -6,13 +6,18 @@
 //! - `~/Library/Application Support` on macOS
 //! - `%APPDATA%` on Windows
 
-use std::{env, fs};
+use std::{
+    env, fs,
+    io::{self, Write},
+};
 
 use anyhow::{bail, Context};
+use codespan_reporting::term::{self, termcolor::WriteColor};
 use fs_extra::dir::copy;
 
 use crate::{
     cli::InstallCommand,
+    color_stream,
     package::{self, is_package, Package},
 };
 
@@ -23,7 +28,7 @@ use crate::{
 /// given `path` two subdirectories deep.
 ///
 /// # Errors
-/// 
+///
 /// Fails if there is no top-level package _and_ it could not find any other
 /// valid packages in or near the current working directory or the given `path`.
 /// (searches two subdirectories deep)
@@ -56,7 +61,7 @@ pub fn packages(command: InstallCommand) -> anyhow::Result<()> {
 /// When the package already exists it will skip the installation.
 ///
 /// # Errors
-/// 
+///
 /// When access is denied while creating the local package directory structure
 /// or when there are insufficient permissions to copy the packge into /local.
 fn install(package: Package) -> anyhow::Result<()> {
@@ -73,17 +78,29 @@ fn install(package: Package) -> anyhow::Result<()> {
         );
         return Ok(());
     }
-
+    
     fs::create_dir_all(&dest).context("failed to create typst package bundle /local")?;
-
+    
     let options = fs_extra::dir::CopyOptions {
         skip_exist: true,
         content_only: true,
         ..Default::default()
     };
-
+    
+    print_installing(&package).unwrap();
     copy(&package.path, &dest, &options)?;
-    println!("installed {}:{}", package.name, package.version);
 
     Ok(())
+}
+
+/// Print that a package is being installed.
+fn print_installing(package: &Package) -> io::Result<()> {
+    let mut w = color_stream();
+    let styles = term::Styles::default();
+
+    w.set_color(&styles.header_help)?;
+    write!(w, "installing")?;
+
+    w.reset()?;
+    writeln!(w, " {package}")
 }

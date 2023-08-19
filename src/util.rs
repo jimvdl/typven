@@ -1,12 +1,21 @@
 //! Several utility functions, such as `ls` and `clean`.
 
-use std::{collections::HashMap, fs};
+use std::{
+    collections::HashMap,
+    fs,
+    io::{self, Write},
+};
 
 use anyhow::{bail, Context};
+use codespan_reporting::term::{self, termcolor::WriteColor};
 use comfy_table::{modifiers::UTF8_ROUND_CORNERS, Table};
 use walkdir::WalkDir;
 
-use crate::{package, cli::CleanCommand};
+use crate::{
+    cli::CleanCommand,
+    color_stream,
+    package,
+};
 
 /// Lists the locally installed packages in table format.
 ///
@@ -14,7 +23,7 @@ use crate::{package, cli::CleanCommand};
 /// will silently ignore that directory.
 ///
 /// # Errors
-/// 
+///
 /// No packages are installed.
 pub fn ls() -> anyhow::Result<()> {
     let packages_dir = dirs::data_dir()
@@ -66,7 +75,7 @@ pub fn ls() -> anyhow::Result<()> {
 /// compiler would not recognize are not cleaned.
 ///
 /// # Errors
-/// 
+///
 /// A package with `name` and `version` does not exist.
 /// A package with `name` does not exist.
 /// The local package directory is empty.
@@ -75,6 +84,9 @@ pub fn clean(command: CleanCommand) -> anyhow::Result<()> {
         .expect("failed to locate data directory")
         .join("typst/packages/local");
 
+
+    print_cleaning(&command).unwrap();
+    
     if let Some(name) = command.name {
         if let Some(version) = command.version {
             let dir = root_dir.join(format!("{name}/{version}"));
@@ -105,4 +117,26 @@ pub fn clean(command: CleanCommand) -> anyhow::Result<()> {
     }
 
     Ok(())
+}
+
+/// Print that a clean is happening.
+fn print_cleaning(command: &CleanCommand) -> io::Result<()> {
+    let mut w = color_stream();
+    let styles = term::Styles::default();
+
+    w.set_color(&styles.header_help)?;
+    write!(w, "cleaning")?;
+
+    if let Some(name) = &command.name {
+        if let Some(version) = &command.version {
+            w.reset()?;
+            return writeln!(w, " {name}:{version}")
+        }
+
+        w.reset()?;
+        return writeln!(w, " {name}")
+    }
+
+    w.reset()?;
+    writeln!(w, " all")
 }
