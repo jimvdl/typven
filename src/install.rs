@@ -62,7 +62,7 @@ pub fn packages(command: InstallCommand) -> anyhow::Result<()> {
 
     try_install(&path).map_err(|err| {
         if let Some(repo_name) = repo_name {
-            fs::remove_dir_all(&path.join(repo_name)).ok();
+            fs::remove_dir_all(path.join(repo_name)).ok();
         }
         err
     })?;
@@ -72,9 +72,9 @@ pub fn packages(command: InstallCommand) -> anyhow::Result<()> {
 
 /// Convinience function for error mapping to clean up temporary git directory
 /// on failure.
-/// 
+///
 /// # Errors
-/// 
+///
 /// See [`install()`] errors.
 fn try_install(path: &PathBuf) -> anyhow::Result<()> {
     if let Some(package) = is_package(&path) {
@@ -107,7 +107,7 @@ fn install(package: Package) -> anyhow::Result<()> {
 
     let dest = dirs::data_dir()
         .expect("failed to locate /local")
-        .join(&subdir);
+        .join(subdir);
 
     if dest.exists() {
         println!(

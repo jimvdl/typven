@@ -80,7 +80,7 @@ pub fn is_package<P: AsRef<Path>>(path: &P) -> Option<Package> {
 ///
 /// [`is_package`]: is_package
 pub fn search<P: AsRef<Path>>(path: &P) -> Vec<Package> {
-    WalkDir::new(&path)
+    WalkDir::new(path)
         .min_depth(1)
         .max_depth(2)
         .into_iter()

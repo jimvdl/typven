@@ -11,11 +11,7 @@ use codespan_reporting::term::{self, termcolor::WriteColor};
 use comfy_table::{modifiers::UTF8_ROUND_CORNERS, Table};
 use walkdir::WalkDir;
 
-use crate::{
-    cli::CleanCommand,
-    color_stream,
-    package,
-};
+use crate::{cli::CleanCommand, color_stream, package};
 
 /// Lists the locally installed packages in table format.
 ///
@@ -41,7 +37,7 @@ pub fn ls() -> anyhow::Result<()> {
         map.entry(package.name)
             .and_modify(|e| {
                 let mut v = package.version.to_string();
-                v.insert_str(0, "\n");
+                v.insert(0, '\n');
                 e.push_str(&v);
             })
             .or_insert(package.version.to_string());
@@ -84,20 +80,19 @@ pub fn clean(command: CleanCommand) -> anyhow::Result<()> {
         .expect("failed to locate data directory")
         .join("typst/packages/local");
 
-
     print_cleaning(&command).unwrap();
-    
+
     if let Some(name) = command.name {
         if let Some(version) = command.version {
             let dir = root_dir.join(format!("{name}/{version}"));
 
-            return fs::remove_dir_all(&dir)
+            return fs::remove_dir_all(dir)
                 .with_context(|| format!("failed to clean {name}:{version}, package not found"));
         }
 
         let dir = root_dir.join(&name);
 
-        return fs::remove_dir_all(&dir)
+        return fs::remove_dir_all(dir)
             .with_context(|| format!("failed to clean {name}, package bundle not found"));
     }
 
@@ -113,7 +108,7 @@ pub fn clean(command: CleanCommand) -> anyhow::Result<()> {
     }
 
     for dir in local_package_dirs {
-        let _ = fs::remove_dir_all(&dir.path());
+        let _ = fs::remove_dir_all(dir.path());
     }
 
     Ok(())
@@ -130,11 +125,11 @@ fn print_cleaning(command: &CleanCommand) -> io::Result<()> {
     if let Some(name) = &command.name {
         if let Some(version) = &command.version {
             w.reset()?;
-            return writeln!(w, " {name}:{version}")
+            return writeln!(w, " {name}:{version}");
         }
 
         w.reset()?;
-        return writeln!(w, " {name}")
+        return writeln!(w, " {name}");
     }
 
     w.reset()?;
