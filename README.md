@@ -27,7 +27,7 @@ typven install --git https://github.com/jimvdl/typven.git
 ```
 
 Viewing the installed packages can be done by running `ls`, this will output 
-every package with all of their versions in table format.
+every package with all of their versions.
 ```sh
 # List installed packages in table format
 typven ls
@@ -48,11 +48,11 @@ typven clean mypkg 0.2.5
 ```
 
 ## Package directory
-Packages are stored in {data-dir}/typst/packages/{namespace}/{name}/{version} to 
-make them available locally on your system. Here, {data-dir} is
-- `$XDG_DATA_HOME` or `~/.local/share` on Linux
-- `~/Library/Application Support` on macOS
-- `%APPDATA%` on Windows
+Packages are stored in `{data-dir}/typst/packages/{namespace}/{name}/{version}` 
+to make them available locally on your system. Here, `{data-dir}` is:
+- `$XDG_DATA_HOME` or `~/.local/share` on Linux.
+- `~/Library/Application Support` on macOS.
+- `%APPDATA%` on Windows.
 
 Packages in the data directory have precedence over ones in the cache directory. 
 While you can create arbitrary namespaces with folders, the namespace typven 
