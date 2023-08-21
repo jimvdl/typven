@@ -53,7 +53,6 @@
 //! - Stores a package in `~/.local/share/typst/packages/local/mypkg/1.0.0`
 //! - Import from it with `#import "@local/mypkg:1.0.0": *`
 
-mod auth;
 mod cli;
 mod install;
 mod package;
@@ -73,7 +72,6 @@ fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
 
     let res = match cli.command {
-        Command::Auth => Err(anyhow::anyhow!("auth is temporarily disabled")), // auth::login(),
         Command::Install(command) => install::packages(command),
         Command::Ls => util::ls(),
         Command::Clean(command) => util::clean(command),

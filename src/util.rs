@@ -61,7 +61,7 @@ pub fn ls() -> anyhow::Result<()> {
     Ok(())
 }
 
-/// Clean the local package directory
+/// Clean the local package directory.
 ///
 /// There are a few possible ways a clean is performed (in order):
 /// 1. If a valid package `name` is present clean all versions of that package.

@@ -1,4 +1,4 @@
-//! Package and package manifest, with helper functions
+//! Package and package manifest, with helper functions.
 //!
 //! Packages always live in folders named as `{name}/{version}`. The name and
 //! version in the folder name and manifest must match.

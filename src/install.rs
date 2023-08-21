@@ -2,18 +2,21 @@
 //!
 //! Packages are installed in: `{data-dir}/typst/packages/{namespace}/{name}/{version}`
 //! where `{data-dir}` is:
-//! - `$XDG_DATA_HOME` or `~/.local/share` on Linux
-//! - `~/Library/Application Support` on macOS
-//! - `%APPDATA%` on Windows
+//! - `$XDG_DATA_HOME` or `~/.local/share` on Linux.
+//! - `~/Library/Application Support` on macOS.
+//! - `%APPDATA%` on Windows.
 
 use std::{
     env, fs,
     io::{self, Write},
+    path::PathBuf,
+    process::Command,
 };
 
 use anyhow::{bail, Context};
 use codespan_reporting::term::{self, termcolor::WriteColor};
 use fs_extra::dir::copy;
+use git_url_parse::GitUrl;
 
 use crate::{
     cli::InstallCommand,
@@ -31,14 +34,49 @@ use crate::{
 ///
 /// Fails if there is no top-level package _and_ it could not find any other
 /// valid packages in or near the current working directory or the given `path`.
-/// (searches two subdirectories deep)
 pub fn packages(command: InstallCommand) -> anyhow::Result<()> {
-    let path = command.path.unwrap_or_else(|| {
-        env::current_dir().expect("accessing current working directory failed")
-        // std::path::Path::new("C:\\Users\\Jim\\Desktop\\typst-templates\\0.1.0");
-        // std::path::Path::new("C:\\Users\\Jim\\Desktop");
-    });
+    let (repo_name, path) = if let Some(url) = &command.url {
+        let path = env::temp_dir();
 
+        let repo = GitUrl::parse(url.as_str()).expect("invalid git url");
+
+        Command::new("git")
+            .args([
+                "-C",
+                path.as_path().to_str().unwrap(),
+                "clone",
+                url.as_str(),
+            ])
+            .output()
+            .expect("git clone failed");
+
+        (Some(repo.name), path)
+    } else {
+        (
+            None,
+            command
+                .path
+                .unwrap_or_else(|| env::current_dir().expect("no working directory")),
+        )
+    };
+
+    try_install(&path).map_err(|err| {
+        if let Some(repo_name) = repo_name {
+            fs::remove_dir_all(&path.join(repo_name)).ok();
+        }
+        err
+    })?;
+
+    Ok(())
+}
+
+/// Convinience function for error mapping to clean up temporary git directory
+/// on failure.
+/// 
+/// # Errors
+/// 
+/// See [`install()`] errors.
+fn try_install(path: &PathBuf) -> anyhow::Result<()> {
     if let Some(package) = is_package(&path) {
         return install(package);
     }
@@ -78,17 +116,19 @@ fn install(package: Package) -> anyhow::Result<()> {
         );
         return Ok(());
     }
-    
-    fs::create_dir_all(&dest).context("failed to create typst package bundle /local")?;
-    
+
     let options = fs_extra::dir::CopyOptions {
         skip_exist: true,
         content_only: true,
         ..Default::default()
     };
-    
+
     print_installing(&package).unwrap();
-    copy(&package.path, &dest, &options)?;
+    fs::create_dir_all(&dest).context("failed to create typst package bundle /local")?;
+    copy(&package.path, &dest, &options).map_err(|err| {
+        fs::remove_dir_all(&dest).ok();
+        err
+    })?;
 
     Ok(())
 }
