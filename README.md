@@ -21,6 +21,9 @@ typven install
 
 # Install package(s) from a given directory
 typven install A:/GitHub/my-packages
+
+# Install package(s) from a repository
+typven install --git https://github.com/jimvdl/typven.git
 ```
 
 Viewing the installed packages can be done by running `ls`, this will output 
