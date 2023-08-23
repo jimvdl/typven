@@ -43,12 +43,15 @@ pub fn ls() -> anyhow::Result<()> {
             .or_insert(package.version.to_string());
     }
 
+    let mut packages: Vec<(String, String)> = map.into_iter().collect();
+    packages.sort();
+
     let mut table = Table::new();
     table
         .set_header(vec!["package", "versions"])
         .apply_modifier(UTF8_ROUND_CORNERS);
 
-    map.into_iter().for_each(|(k, v)| {
+    packages.into_iter().for_each(|(k, v)| {
         table.add_row(vec![k, v]);
     });
 

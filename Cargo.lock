@@ -1094,7 +1094,6 @@ dependencies = [
  "fs_extra",
  "git-url-parse",
  "open",
- "rustls-webpki 0.101.4",
  "semver",
  "serde",
  "toml",
