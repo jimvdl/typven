@@ -38,7 +38,7 @@ pub fn packages(command: InstallCommand) -> anyhow::Result<()> {
     let (repo_name, path) = if let Some(url) = &command.url {
         let path = env::temp_dir();
 
-        let repo = GitUrl::parse(url.as_str()).expect("invalid git url");
+        let repo = GitUrl::parse(url.as_str()).map_err(anyhow::Error::msg)?;
 
         Command::new("git")
             .args([
@@ -48,15 +48,16 @@ pub fn packages(command: InstallCommand) -> anyhow::Result<()> {
                 url.as_str(),
             ])
             .output()
-            .expect("git clone failed");
+            .map_err(anyhow::Error::msg)?;
 
         (Some(repo.name), path)
     } else {
         (
             None,
-            command
-                .path
-                .unwrap_or_else(|| env::current_dir().expect("no working directory")),
+            fs::canonicalize(match command.path {
+                Some(path) => path,
+                None => env::current_dir().map_err(anyhow::Error::msg)?,
+            })?,
         )
     };
 
