@@ -23,6 +23,10 @@ pub enum Command {
     /// List locally installed packages in table format.
     Ls,
 
+    /// Self update the typven CLI
+    #[cfg_attr(not(feature = "self-update"), doc = " (disabled)")]
+    Update(UpdateCommand),
+
     /// Clean all installed local packages, or clean a target package either by
     /// name or name and version.
     Clean(CleanCommand),
@@ -38,6 +42,21 @@ pub struct InstallCommand {
     /// installation.
     #[clap(long = "git", value_name = "URL", exclusive = true)]
     pub url: Option<Url>,
+}
+
+#[derive(Debug, Clone, Parser)]
+pub struct UpdateCommand {
+    /// Which version to update to (defaults to latest)
+    pub version: Option<Version>,
+
+    /// Forces a downgrade to an older version (required for downgrading)
+    #[clap(long, default_value_t = false)]
+    pub force: bool,
+
+    /// Reverts to the version from before the last update (only possible if
+    /// `typst update` has previously ran)
+    #[clap(long, default_value_t = false, exclusive = true)]
+    pub revert: bool,
 }
 
 /// Clean all installed local packages, or clean a target package either by

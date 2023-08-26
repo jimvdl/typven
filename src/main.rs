@@ -56,6 +56,8 @@
 mod cli;
 mod install;
 mod package;
+#[cfg(feature = "self-update")]
+mod update;
 mod util;
 
 use std::io::{self, IsTerminal, Write};
@@ -74,6 +76,7 @@ fn main() -> anyhow::Result<()> {
     let res = match cli.command {
         Command::Install(command) => install::packages(command),
         Command::Ls => util::ls(),
+        Command::Update(command) => update::update(command),
         Command::Clean(command) => util::clean(command),
     };
 
@@ -103,4 +106,18 @@ fn color_stream() -> termcolor::StandardStream {
     } else {
         ColorChoice::Never
     })
+}
+
+#[cfg(not(feature = "self-update"))]
+mod update {
+    use crate::cli::UpdateCommand;
+    use anyhow::bail;
+
+    pub fn update(_: UpdateCommand) -> anyhow::Result<()> {
+        bail!(
+            "self-updating is not enabled for this executable, \
+             please update with the package manager or mechanism \
+             used for initial installation"
+        )
+    }
 }
