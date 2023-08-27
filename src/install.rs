@@ -61,38 +61,31 @@ pub fn packages(command: InstallCommand) -> anyhow::Result<()> {
         )
     };
 
-    try_install(&path).map_err(|err| {
-        if let Some(repo_name) = repo_name {
-            fs::remove_dir_all(path.join(repo_name)).ok();
+    let res = {
+        if let Some(package) = is_package(&path) {
+            return install(package);
         }
-        err
-    })?;
 
-    Ok(())
-}
+        let packages = package::search(&path);
 
-/// Convinience function for error mapping to clean up temporary git directory
-/// on failure.
-///
-/// # Errors
-///
-/// See [`install()`] errors.
-fn try_install(path: &PathBuf) -> anyhow::Result<()> {
-    if let Some(package) = is_package(&path) {
-        return install(package);
+        if packages.is_empty() {
+            bail!("no valid packages found");
+        }
+
+        for package in packages {
+            install(package)?;
+        }
+
+        Ok(())
+    };
+
+    if res.is_err() {
+        if let Some(repo_name) = repo_name {
+            fs::remove_dir_all(path.join(repo_name))?;
+        }
     }
 
-    let packages = package::search(&path);
-
-    if packages.is_empty() {
-        bail!("no valid packages found");
-    }
-
-    for package in packages {
-        install(package)?;
-    }
-
-    Ok(())
+    res
 }
 
 /// Installs a single `Package` into the local package directory.
