@@ -89,14 +89,16 @@ pub fn clean(command: CleanCommand) -> anyhow::Result<()> {
         if let Some(version) = command.version {
             let dir = root_dir.join(format!("{name}/{version}"));
 
-            return fs::remove_dir_all(dir)
-                .with_context(|| format!("failed to clean {name}:{version}, package not found"));
+            return fs::remove_dir_all(dir).with_context(|| {
+                format!("failed to clean {name}:{version}, package not found")
+            });
         }
 
         let dir = root_dir.join(&name);
 
-        return fs::remove_dir_all(dir)
-            .with_context(|| format!("failed to clean {name}, package bundle not found"));
+        return fs::remove_dir_all(dir).with_context(|| {
+            format!("failed to clean {name}, package bundle not found")
+        });
     }
 
     let local_package_dirs: Vec<_> = WalkDir::new(&root_dir)

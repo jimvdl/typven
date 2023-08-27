@@ -9,7 +9,6 @@
 use std::{
     env, fs,
     io::{self, Write},
-    path::PathBuf,
     process::Command,
 };
 
@@ -35,30 +34,25 @@ use crate::{
 /// Fails if there is no top-level package _and_ it could not find any other
 /// valid packages in or near the current working directory or the given `path`.
 pub fn packages(command: InstallCommand) -> anyhow::Result<()> {
-    let (repo_name, path) = if let Some(url) = &command.url {
-        let path = env::temp_dir();
+    let (repo_name, path) = match &command.url {
+        Some(url) => {
+            let repo = GitUrl::parse(url.as_str()).map_err(anyhow::Error::msg)?;
 
-        let repo = GitUrl::parse(url.as_str()).map_err(anyhow::Error::msg)?;
+            let path = env::temp_dir();
+            Command::new("git")
+                .args(["-C", path.as_path().to_str().unwrap(), "clone", url.as_str()])
+                .output()
+                .map_err(anyhow::Error::msg)?;
 
-        Command::new("git")
-            .args([
-                "-C",
-                path.as_path().to_str().unwrap(),
-                "clone",
-                url.as_str(),
-            ])
-            .output()
-            .map_err(anyhow::Error::msg)?;
-
-        (Some(repo.name), path)
-    } else {
-        (
+            (Some(repo.name), path)
+        }
+        None => (
             None,
             fs::canonicalize(match command.path {
                 Some(path) => path,
                 None => env::current_dir().map_err(anyhow::Error::msg)?,
             })?,
-        )
+        ),
     };
 
     let res = {
@@ -99,15 +93,10 @@ pub fn packages(command: InstallCommand) -> anyhow::Result<()> {
 fn install(package: Package) -> anyhow::Result<()> {
     let subdir = format!("typst/packages/local/{}/{}", package.name, package.version);
 
-    let dest = dirs::data_dir()
-        .expect("failed to locate /local")
-        .join(subdir);
+    let dest = dirs::data_dir().expect("failed to locate /local").join(subdir);
 
     if dest.exists() {
-        println!(
-            "{}:{} already exists - skipping",
-            package.name, package.version
-        );
+        println!("{}:{} already exists - skipping", package.name, package.version);
         return Ok(());
     }
 

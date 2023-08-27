@@ -54,10 +54,12 @@ pub fn update(command: UpdateCommand) -> anyhow::Result<()> {
             .map_err(|err| anyhow!("failed to revert to backup: {err}"));
     }
 
-    let current_exe = env::current_exe()
-        .map_err(|err| anyhow!("failed to locate path of the running executable: {err}"))?;
+    let current_exe = env::current_exe().map_err(|err| {
+        anyhow!("failed to locate path of the running executable: {err}")
+    })?;
 
-    fs::copy(current_exe, &backup_path).map_err(|err| anyhow!("failed to create backup: {err}"))?;
+    fs::copy(current_exe, &backup_path)
+        .map_err(|err| anyhow!("failed to create backup: {err}"))?;
 
     let release = Release::from_tag(command.version)?;
     if !update_needed(&release)? && !command.force {
@@ -66,8 +68,8 @@ pub fn update(command: UpdateCommand) -> anyhow::Result<()> {
     }
 
     let binary_data = release.download_binary(needed_asset()?)?;
-    let mut temp_exe =
-        NamedTempFile::new().map_err(|err| anyhow!("failed to create temporary file: {err}"))?;
+    let mut temp_exe = NamedTempFile::new()
+        .map_err(|err| anyhow!("failed to create temporary file: {err}"))?;
     temp_exe
         .write_all(&binary_data)
         .map_err(|err| anyhow!("failed to write binary data: {err}"))?;
@@ -181,8 +183,9 @@ fn extract_binary_from_tar_xz(data: &[u8]) -> anyhow::Result<Vec<u8>> {
         .ok_or(anyhow!("tar.xz archive did not contain typven binary"))?;
 
     let mut buffer = vec![];
-    file.read_to_end(&mut buffer)
-        .map_err(|err| anyhow!("failed to read binary data from tar.xz archive: {err}"))?;
+    file.read_to_end(&mut buffer).map_err(|err| {
+        anyhow!("failed to read binary data from tar.xz archive: {err}")
+    })?;
 
     Ok(buffer)
 }
