@@ -23,7 +23,7 @@ use crate::{cli::CleanCommand, color_stream, package};
 /// No packages are installed.
 pub fn ls() -> anyhow::Result<()> {
     let packages_dir = dirs::data_dir()
-        .expect("failed to locate data directory")
+        .context("failed to locate data directory")?
         .join("typst/packages/local");
 
     let packages = package::search(&packages_dir);
@@ -80,7 +80,7 @@ pub fn ls() -> anyhow::Result<()> {
 /// The local package directory is empty.
 pub fn clean(command: CleanCommand) -> anyhow::Result<()> {
     let root_dir = dirs::data_dir()
-        .expect("failed to locate data directory")
+        .context("failed to locate data directory")?
         .join("typst/packages/local");
 
     print_cleaning(&command).unwrap();

@@ -93,7 +93,7 @@ pub fn packages(command: InstallCommand) -> anyhow::Result<()> {
 fn install(package: Package) -> anyhow::Result<()> {
     let subdir = format!("typst/packages/local/{}/{}", package.name, package.version);
 
-    let dest = dirs::data_dir().expect("failed to locate /local").join(subdir);
+    let dest = dirs::data_dir().context("failed to locate /local")?.join(subdir);
 
     if dest.exists() {
         println!("{}:{} already exists - skipping", package.name, package.version);
